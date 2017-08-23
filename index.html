@@ -11,6 +11,7 @@
            background-color: #99ddff;
            word-wrap: break-word;
            font-size: 10px;
+           margin-bottom: 2px;
         }
         .cyphertext {
            word-wrap: break-word;
@@ -37,31 +38,57 @@
     </div>
 
     <script type="text/x-template" id="party-template">
-        <div class="row panel">
+        <div class="row panel" v-show="!this.sent">
             <div class="col">
                 <div class="row">
                     <div class="col">
-                        <h3>Party {{party.partyNo}} <small>Enters a score based on their private data</small></h3>
+                        <h3>Party {{partyIndex+1}} <small>Enters scores based on their private data</small></h3>
+                    </div>
+                </div>
+
+                <div class="row" style="padding-top: 10px; padding-bottom: 10px">
+                    <div class="col">
+                        <span v-if="partyIndex==0">Encrypted scores received from Collector</span>
+                        <span v-if="partyIndex>0">Encrypted scores received from Party {{partyIndex}}</span>
+                    </div>
+                </div>
+
+                <div class="row" v-for="(score, index) in inputScores">
+                    <div class="col-sm-2">
+                        <label class="control-label">Entity {{index+1}}</label>
+                    </div>
+                    <div class="col-sm-10 result">
+                        <span class="ciphertext">{{score.toString()}}</span>
+                    </div>
+                </div>
+
+                <div class="row" style="padding-top: 10px; padding-bottom: 10px">
+                    <div class="col">
+                        <span>Enter scores</span>
+                    </div>
+                </div>
+
+                <div class="row" v-for="(score, index) in scores">
+                    <div class="col-sm-2">
+                        <label class="control-label">Entity {{index+1}}</label>
+                    </div>
+                    <div class="col-sm-2" v-show="!outputScores">
+                        <input v-model="scores[index]" type="text" placeholder="Enter score">
+                    </div>
+                    <div class="col-sm-10 result" v-if="outputScores">
+                        <span class="ciphertext">{{outputScores[index].toString()}}</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-3" v-show="!this.outputScores">
+                        <button type="submit" @click="this.encrypt" class="btn btn-primary">Encrypt</button>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-sm-2">
-                        <label class="control-label" for="inputA">Enter score</label>
-                    </div>
-                    <div class="col-sm-2">
-                        <input :disabled="this.sent" v-model="inputValue" type="text" placeholder="Integer">
-                    </div>
-                    <div class="col-sm-3" v-show="!this.sent">
-                        <button type="submit" @click="this.addScoreAndSend" class="btn btn-primary">Add score and send to Party {{nextPartyNo}}</button>
-                    </div>
-                    <div class="col-sm-3" v-show="!this.sent">
-                        <button type="submit" @click="this.addScoreAndReturn" class="btn">Add score and send to Collector</button>
-                    </div>
-                </div>
-                <div class="row" v-show="this.sent">
-                    <div class="col-sm-12">
-                        <p class="sent">Sent</p>
-                        <div class="result"><span class="ciphertext">{{sentText}}</span></div>
+                    <div class="col-sm-3" v-show="this.outputScores">
+                        <button type="submit" @click="this.sendToParty" class="btn btn-primary">Send to Party {{partyIndex+2}}</button>
+                        <button type="submit" @click="this.sendToCollector" class="btn">Send to Collector</button>
                     </div>
                 </div>
             </div>
@@ -78,7 +105,7 @@
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row" v-show="!sent">
                 <div class="col">
                     <div class="row panel">
                         <div class="col">
@@ -87,23 +114,31 @@
                                     <h3>Collector <small>Initiates the scoring and collects the final result</small></h3>
                                 </div>
                             </div>
-                            <div class="row">
+
+                            <div class="row" v-for="(score, index) in scores">
                                 <div class="col-sm-2">
-                                    <label class="control-label">Enter initial score</label>
+                                    <label class="control-label">Entity {{index+1}}</label>
                                 </div>
-                                <div class="col-sm-2">
-                                    <input :disabled="initialised" v-model="inputValue" type="text" placeholder="Integer">
+                                <div class="col-sm-2" v-show="!outputScores">
+                                    <input v-model="scores[index]" type="text" placeholder="Enter score">
                                 </div>
+                                <div class="col-sm-10 result" v-if="outputScores">
+                                    <span class="ciphertext">{{outputScores[index].toString()}}</span>
+                                </div>
+                            </div>
+
+                            <div class="row" v-show="!outputScores">
                                 <div class="col-sm-8">
-                                    <button @click="sendInitialScore" class="btn btn-primary">
-                                        Encrypt and send to Party 1
+                                    <button @click="encrypt" class="btn btn-primary">
+                                        Encrypt
                                     </button>
                                 </div>
                             </div>
-                            <div class="row" v-show="initialised">
-                                <div class="col-sm-12">
-                                    <p class="sent">Sent</p>
-                                    <div class="result"><span class="ciphertext">{{inputEncrypted}}</span></div>
+                            <div class="row" v-show="outputScores">
+                                <div class="col-sm-8">
+                                    <button @click="send" class="btn btn-primary">
+                                        Send to Party 1
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -111,9 +146,9 @@
                 </div>
             </div>
 
-            <Party :party="party" v-for="party in parties" key="party.partyNo" @send="onSend" v-on:return="onReturn" />
+            <Party :inputScores="inputScores" :partyIndex="index" v-for="(inputScores, index) in parties" key="index" @send="onSend" v-on:return="onReturn" />
 
-            <div class="row" v-show="this.returnedValue">
+            <div class="row" v-show="this.returnedScores">
                 <div class="col">
                     <div class="row panel">
                         <div class="col">
@@ -122,19 +157,25 @@
                                     <h3>Collector</h3>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row" v-show="!decryptedScores">
                                 <div class="col">
                                     <button type="submit" @click="this.decrypt" class="btn btn-success">Decrypt</button>
                                 </div>
                             </div>
-                            <div class="row" v-show="plainText" style="padding-top:20px">
+                            <div class="row" v-show="decryptedScores" style="padding-top:20px">
                                 <div class="col-sm-2">
-                                    <label class="control-label">Decrypted score</label>
-                                </div>
-                                <div class="col-sm-2">
-                                    <input disabled :value="this.plainText" type="text" placeholder="Integer">
+                                    <label class="control-label">Decrypted scores</label>
                                 </div>
                             </div>
+                            <div class="row" v-for="(score, index) in decryptedScores">
+                                <div class="col-sm-2">
+                                    <label class="control-label">Entity {{index+1}}</label>
+                                </div>
+                                <div class="col-sm-2">
+                                    <input disabled :value="score" type="text">
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -158,41 +199,29 @@
 
      Vue.component('Party', {
          template: '#party-template',
-         props: ['party'],
+         props: ['inputScores', 'partyIndex'],
          data () {
              return {
-                 inputValue: this.party.inputValue,
-                 sent: false
+                scores: new Array(this.inputScores.length),
+                outputScores: null,
+                sent: false
              }
-         },
-         mounted () {
-            console.log(this.party)
          },
         methods: {
-            addScore () {
-                 var encrypted = keys.pub.encrypt(nbv(parseInt(this.inputValue)))
-                 var added = keys.pub.add(this.party.received, encrypted);
-                 this.party.inputValue = this.inputValue
-                 this.party.sent = added
+            encrypt () {
+                this.outputScores = this.scores.map((v, index) => {
+                   var encrypted = keys.pub.encrypt(nbv(parseInt(v)))
+                   return keys.pub.add(this.inputScores[index], encrypted);
+                })
              },
-             addScoreAndSend () {
-                this.addScore()
-                this.$emit('send', this.party)
+             sendToParty () {
+                this.$emit('send', this.outputScores)
                 this.sent = true
              },
-             addScoreAndReturn () {
-                this.addScore()
-                this.$emit('return', this.party)
+             sendToCollector () {
+                this.$emit('return', this.outputScores)
                 this.sent = true
              }
-         },
-         computed: {
-            nextPartyNo () {
-                return this.party.partyNo + 1
-            },
-            sentText () {
-                return this.party.sent ? this.party.sent.toString() : ""
-            }
          }
      })
 
@@ -200,55 +229,37 @@
          el: '#app',
          template: '#main-template',
          data: {
-             initialised: false,
-             inputValue: null,
-             inputEncrypted: null,
-             returnedValue: null,
-             parties: [],
-             currentParty: 0,
-             plainText: null
+            scores: new Array(4),
+            outputScores: null,
+            sent: false,
+            returnedScores: null,
+            decryptedScores: null,
+            parties: []
          },
-         methods: {
-             sendInitialScore () {
-                console.log(parseInt(this.inputValue))
-                 var enc = keys.pub.encrypt(nbv(parseInt(this.inputValue)))
-                 // Store the string representation for display
-                 this.inputEncrypted  = enc.toString()
-                 console.log('initialScore')
-                 console.log(enc)
-                 this.sendToNextParty(enc)
-                 this.initialised = true
+        methods: {
+             encrypt () {
+                this.outputScores = this.scores.map(v => {
+                   return encrypted = keys.pub.encrypt(nbv(parseInt(v)))
+                })
              },
-             sendToNextParty (received) {
-                console.log('sendToNextParty')
-                console.log(received)
-                this.currentParty = this.currentParty + 1
-                 var party =  {
-                     partyNo: this.currentParty,
-                     received: received,
-                     inputValue: null,
-                     sent: null
-                 }
-                 this.parties.push(party)
+             send () {
+                this.parties.push(this.outputScores)
+                this.sent = true
              },
              onSend (party) {
-                console.log('onSend')
-                console.log(party)
                 this.parties[party.partyNo - 1] = party
-                console.log(this.parties)
-                this.sendToNextParty(party.sent)
+                this.send(party.sent)
              },
              onReturn (party) {
-                console.log('onReturn')
-                console.log(party)
                 this.parties[party.partyNo - 1] = party
-                this.returnedValue = party.sent
-                console.log(this.returnedValue)
+                this.returnedScores = party
              },
              decrypt () {
-                 this.plainText = keys.sec.decrypt(this.returnedValue).toString(10)
+                this.decryptedScores = this.returnedScores.map(v => {
+                    return keys.sec.decrypt(v).toString(10)
+                })
              }
-         }
+        }
      })
     </script>
 
