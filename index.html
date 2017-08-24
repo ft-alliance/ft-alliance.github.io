@@ -70,7 +70,7 @@
 
                             <div class="row" v-for="(score, entityIndex) in inputScores" v-show="partyIndex > 1">
                                 <div class="col-sm-2">
-                                    <label class="control-label">Entity {{entityIndex+1}}</label>
+                                    <label class="control-label">{{entities[entityIndex]}}</label>
                                 </div>
                                 <div class="col-sm-10 result">
                                     <span class="ciphertext">{{score.toString()}}</span>
@@ -85,7 +85,7 @@
 
                             <div class="row" v-for="(score, index) in scores">
                                 <div class="col-sm-2">
-                                    <label class="control-label">Entity {{index+1}}</label>
+                                    <label class="control-label">{{entities[index]}}</label>
                                 </div>
                                 <div class="col-sm-2" v-show="!outputScores">
                                     <input v-model="scores[index]" type="text" placeholder="Enter score">
@@ -135,7 +135,7 @@
 
                             <div class="row" v-for="(score, entityIndex) in inputScores">
                                 <div class="col-sm-2">
-                                    <label class="control-label">Entity {{entityIndex+1}}</label>
+                                    <label class="control-label">{{entities[entityIndex]}}</label>
                                 </div>
                                 <div class="col-sm-10 result">
                                     <span class="ciphertext">{{score.toString()}}</span>
@@ -156,7 +156,7 @@
 
                             <div class="row" v-for="(score, index) in decryptedScores">
                                 <div class="col-sm-2">
-                                    <label class="control-label">Entity {{index+1}}</label>
+                                    <label class="control-label">{{entities[index]}}</label>
                                 </div>
                                 <div class="col-sm-2">
                                     <input disabled :value="score" type="text">
@@ -190,6 +190,7 @@
         el: '#app',
         template: '#main-template',
         data: {
+            entities: ['John Druitt', 'Melissa Hartwell', 'Hung Duc Hoa', 'L. Subramaniam'],
             partyIndex: 1,
             inputScores: null,
             scores: new Array(4),
