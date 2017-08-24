@@ -215,11 +215,11 @@
                 })
              },
              sendToParty () {
-                this.$emit('send', this.outputScores)
+                this.$emit('send', this.partyIndex, this.outputScores)
                 this.sent = true
              },
              sendToCollector () {
-                this.$emit('return', this.outputScores)
+                this.$emit('return', this.partyIndex, this.outputScores)
                 this.sent = true
              }
          }
@@ -246,12 +246,10 @@
                 this.parties.push(this.outputScores)
                 this.sent = true
              },
-             onSend (party) {
-                this.parties[party.partyNo - 1] = party
-                this.send(party.sent)
+             onSend (partyIndex, party) {
+                this.parties.push(party)
              },
-             onReturn (party) {
-                this.parties[party.partyNo - 1] = party
+             onReturn (partyIndex, party) {
                 this.returnedScores = party
              },
              decrypt () {
